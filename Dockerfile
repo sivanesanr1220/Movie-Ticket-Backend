@@ -1,27 +1,26 @@
 # ---------- BUILD STAGE ----------
-FROM maven:3.9.9-amazoncorretto-25-alpine AS builder
+FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /build
 
-# Copy pom.xml first (better caching)
+# Copy pom.xml (cache dependencies)
 COPY pom.xml .
-
-# Download dependencies
 RUN mvn -B dependency:go-offline
 
 # Copy source code
 COPY src src
 
-# Build jar
+# Build JAR
 RUN mvn -B clean package -DskipTests
 
 
 # ---------- RUNTIME STAGE ----------
-FROM amazoncorretto:25-alpine3.22-jdk
+FROM eclipse-temurin:17-jdk-alpine
 
 WORKDIR /app
 
-COPY --from=builder /build/target/movie-ticket-booking-1.0.0-SNAPSHOT.jar app.jar
+# Copy generated JAR (use wildcard to avoid name issues)
+COPY --from=builder /build/target/*.jar app.jar
 
 EXPOSE 8080
 
